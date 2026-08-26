@@ -26,10 +26,10 @@ The MVP succeeds when 99x can identify active projects needing attention, explai
 | **Project** | Source ID/project code, name, lifecycle status, start/end dates, accountable owner |
 | **Team** | Source ID, name, active status, team lead |
 | **Person** | Stable workforce ID, display name, active status; no payroll or sensitive HR attributes |
-| **ProjectTeamAssignment** | Project, team, responsibility, effective dates |
+| **ProjectTeamAssignment** | Source assignment ID, or approved composite key; project, team, responsibility, effective dates |
 | **Risk** | Source ID, project, category, likelihood, impact/rating, status, owner, review date |
 | **ComplianceFinding** | Source ID, project, audit/control reference, status, severity, due date, owner |
-| **ResourceAllocation** | Source ID, project, team/person, role or skill category, period, requested and committed capacity |
+| **ResourceAllocation** | Source ID, project, team, canonical month, requested FTE, committed FTE |
 
 Only properties required by the read, action, policy, identity, or lineage acceptance tests enter the MVP ontology.
 
@@ -44,7 +44,6 @@ graph LR
     PROJECT --> FINDING[ComplianceFinding]
     PROJECT --> ALLOCATION[ResourceAllocation]
     ALLOCATION --> TEAM
-    ALLOCATION --> PERSON
     PERSON -->|owns| RISK
     PERSON -->|owns| FINDING
 ```
@@ -55,11 +54,11 @@ Reviewed LinkML in Git defines this semantic model. Generated representations ar
 
 | Source role | MVP data | Access |
 | --- | --- | --- |
-| **Project portfolio source** | Projects, lifecycle status, dates, accountable owner | Read-only |
+| **Project portfolio source** | Projects, lifecycle status, dates, accountable owner, project-team assignments | Read-only |
 | **Team/person directory** | Active people, teams, leads, and memberships | Read only; minimum approved fields |
 | **Audit/compliance source** | Project findings, controls/audits, severity, due dates, owners | Read-only |
 | **Risk register** | Project risks, ratings, state, review date, owner | Read approved fields; write risk owner only |
-| **Resource-planning source** | Requested and committed capacity by project, team/person, and period | Read-only |
+| **Resource-planning source** | Requested and committed FTE by project, team, and period | Read-only |
 | **Evidence/document store** | Optional audit evidence referenced by findings | Bounded evidence access; not a mandatory runtime join |
 
 One 99x system may satisfy several source roles. Record the actual products/endpoints, owners, rate limits, authentication, data classifications, and conditional-update/idempotency support before implementation. Reuse existing supported interfaces; do not build a generic connector abstraction first.
@@ -67,14 +66,17 @@ One 99x system may satisfy several source roles. Record the actual products/endp
 ### Identity and join rules
 
 - Project code is the declared cross-system project key.
-- Each team, person, risk, compliance finding, and resource allocation uses its source's immutable identifier.
-- The team/person directory is authoritative for active workforce identity. Email and display name are attributes, not keys.
-- The risk register's user identifier is the write value for risk ownership and must map exactly to an active workforce identity.
+- Each team and person uses the immutable identifier from the team/person directory. Email, display name, and team name are attributes, not keys.
+- A project-team assignment uses its source assignment ID. If none exists, its canonical key is `(project code, team ID, responsibility, valid-from date)`; overlapping duplicate assignments are quarantined.
+- Each risk, compliance finding, and resource allocation uses its source's immutable identifier.
+- Project owner, project-team assignment, and allocation references must use the directory's team/person IDs or an approved crosswalk.
+- Risk-owner and finding-owner user IDs each use a separate versioned crosswalk to the directory person ID. The risk-owner mapping must also preserve the risk register's active user ID used for writes.
+- Every source identity maps to at most one active canonical person/team for an effective period. One-to-many or overlapping mappings are ambiguous and excluded.
 - Project-team assignments and allocations are effective-dated.
 - Every canonical object receives a stable IRI derived from tenant, object type, and canonical identifier.
 - Missing, duplicate, or conflicting keys are quarantined and reported; the system never silently guesses a join.
 
-Every risk, finding, and allocation must contain the project code or use one approved, versioned crosswalk with an owner, effective dates, and ambiguity tests. If profiling cannot establish a reliable structured join, the affected source role is excluded and the answer is reported as partial. Probabilistic matching, document-derived runtime joins, and unrestricted `owl:sameAs` reasoning are deferred.
+Every risk, finding, assignment, and allocation must contain exact project/team/person keys or use an approved, versioned crosswalk with an owner, cardinality, effective dates, and ambiguity tests. If profiling cannot establish a reliable structured join, the affected source role is excluded and answer coverage is `partial`. Probabilistic matching, document-derived runtime joins, and unrestricted `owl:sameAs` reasoning are deferred.
 
 ## Scenarios
 
@@ -87,10 +89,12 @@ Canonical predicates are versioned in the query contract:
 - active project = lifecycle status `active`;
 - material risk = status `open` with approved canonical rating `high` or `critical`;
 - compliance concern = an open finding that is overdue, non-compliant, or above the approved severity threshold;
-- allocation gap = committed capacity below requested capacity by the approved materiality threshold for the selected period;
+- allocation gap = `max(0, Σ requested FTE − Σ committed FTE)` above the approved threshold for one `(project, team, canonical month)`; a project needs attention when any team has a material gap;
 - accountable team/person = an active, effective-dated assignment or explicit source owner.
 
-Profiling maps concrete source values to canonical enums, `other`, or `unknown`. Domain owners approve mappings and the allocation materiality threshold before release. Missing demand or allocation data produces `unknown`, never an inferred shortage.
+Allocations are normalised to FTE and half-open calendar months in the agreed 99x reporting timezone. Records spanning other periods are split using the approved source working calendar. If a source supplies both team summaries and person-level detail, the query uses the approved team summary and never sums both. Missing requested or committed capacity produces `unknown`, never an inferred shortage.
+
+Profiling maps concrete source values to canonical enums, `other`, or `unknown`. Domain owners approve the mappings, working calendar, and allocation materiality threshold before release.
 
 The answer must:
 
@@ -98,7 +102,7 @@ The answer must:
 - return the project, attention reasons, relevant risk/finding/allocation values, and accountable teams/people;
 - enforce object/field permissions and minimise person data;
 - cite the source record/version, extraction run, mapping, and model release for every returned field;
-- report per-source freshness and whether the answer is `complete`, `partial`, or `stale`;
+- report per-source timestamps, independent coverage (`complete` or `partial`), and freshness (`current` or `stale`);
 - surface unresolved identities, missing joins, and unavailable sources.
 
 Natural-language exploration may only select and parameterise this approved query contract. Arbitrary LLM-generated SQL/API plans are out of scope.
@@ -192,9 +196,9 @@ The following correctness gates are non-negotiable:
 
 - Every joined record follows a declared exact key; ambiguous records are never represented as resolved.
 - A versioned, de-identified golden dataset covers: a high-risk project, overdue compliance finding, material allocation gap, multiple attention reasons, healthy/inactive exclusions, missing project key, ambiguous person mapping, unmapped enum, stale source, and unavailable source.
-- The golden dataset produces the agreed attention reasons, accountable parties, and completeness status.
+- The golden dataset produces the agreed attention reasons, accountable parties, coverage, and freshness statuses.
 - One hundred percent of returned business fields carry the required lineage identifiers.
-- Stale/unavailable sources and excluded ambiguous records make the response partial/stale rather than silently complete.
+- An unavailable source or excluded ambiguous record makes coverage `partial`; an out-of-budget source makes freshness `stale`. Both states may apply to the same answer.
 
 ### Action and governance
 

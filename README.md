@@ -149,7 +149,19 @@ The 99x MVP deliberately proves one vertical slice before broad enterprise cover
 - **Interfaces:** REST/OpenAPI, with optional MCP wrappers and natural-language selection of approved query templates.
 - **Deferred:** live runtime federation, live OWL/SPARQL reasoning, automatic model repair, general NL planning, GraphQL/GQL, and extra infrastructure without a measured requirement.
 
-See [samples/99x/mvp-scope.md](./samples/99x/mvp-scope.md) for acceptance gates, [docs/artifact-management.md](./docs/artifact-management.md) for artefact ownership and Git/OCI flow, and [docs/storage.md](./docs/storage.md) for the accepted storage profile.
+See [samples/99x/mvp-scope.md](./samples/99x/mvp-scope.md) for acceptance gates.
+
+## Documentation
+
+Technical design for the first implementation:
+
+| Document | What it covers |
+| --- | --- |
+| [Build-time architecture](./docs/buildtime-architecture.md) | How source evidence becomes an approved, immutable model release. |
+| [Runtime architecture](./docs/runtime-architecture.md) | How a release governs ingestion, a cross-system read, and one safe write-back. |
+| [Artifact management](./docs/artifact-management.md) | Git as source of truth, OCI release bundles, and promotion without competing stores. |
+| [Storage](./docs/storage.md) | What the MVP persists and where (Git, OCI, PostgreSQL). |
+| [Standards](./docs/standards.md) | Open standards by adoption level (Core, Recommended, Watch). |
 
 ## Differentiation
 

@@ -20,11 +20,11 @@ Related docs: [buildtime-architecture.md](./buildtime-architecture.md) (proposal
 | Artefacts | System of record | Writer | Runtime use |
 | --- | --- | --- | --- |
 | LinkML, vocabularies, mappings, identity rules, contracts | Git | Model/domain/data owners through approved pull requests | Compiled projections in PostgreSQL |
-| Connector/action-adapter code, migrations, CI definitions, synthetic fixtures and tests | Git | Engineers/agents through technical review | Digest-pinned images and migration set |
+| Connector/action-adapter code, migration source, CI definitions, synthetic fixtures and tests | Git | Engineers/agents through technical review | Images and executable migrations are published in the OCI release |
 | Pull requests, technical reviews and CI results | Git forge | Git forge and CI identities | Check/review IDs linked from the release |
 | Domain, data-owner and action approvals | PostgreSQL governance schema | Governance service after authenticated decisions | Required by the release gate |
 | Connector/action images | OCI registry | CI build identity | Deployment pulls exact digest |
-| Generated RDF/OWL, SHACL, JSON-LD, JSON Schema, provenance, reports and SBOM | OCI release bundle | CI release identity | Projections loaded and digests verified at activation |
+| Generated RDF/OWL, SHACL, JSON-LD, JSON Schema, executable migrations, provenance, reports and SBOM | OCI release bundle | CI release identity | Projections/migrations loaded and digests verified at deployment |
 | Immutable release manifest content | OCI release bundle | CI release identity | Verified copy and digest in PostgreSQL |
 | Published release record and manifest copy | PostgreSQL model registry | Build-time release publisher | Release manager verifies before activation |
 | Active release pointer and activation/rollback history | PostgreSQL model registry | Runtime release manager only, after operator request | Pinned by every ingestion, query and action |
@@ -108,8 +108,8 @@ This keeps semantic/executable logic reviewable without putting secrets or mutab
 2. A release bot opens an isolated Git branch and pull request linked to the proposal.
 3. CI validates the exact candidate commit. Failures return structured findings to the proposal.
 4. Domain/data/action owners approve the CI-passing commit in the workbench; technical code owners approve the same pull request commit.
-5. A required check confirms that CI and approvals reference the same commit. Amendments expire approvals and restart validation.
-6. The release bot merges and creates a protected SemVer tag.
+5. A required check confirms that CI and approvals reference the same commit. Amendments—including a rebase—expire approvals and restart validation.
+6. The release bot fast-forwards the protected branch and creates the SemVer tag on that exact approved commit. If the target branch has advanced, it creates a new candidate instead of producing an unapproved merge commit.
 7. CI publishes digest-addressed images and one generated release bundle to the OCI registry. The release publisher writes the verified manifest to PostgreSQL.
 8. The deployment operator runs migrations and smoke tests, then requests activation. The runtime release manager verifies prerequisites and atomically changes the active pointer.
 
@@ -128,13 +128,14 @@ Git is authoritative for the source diff, Git-forge metadata for technical revie
 
 ## Release bundle and manifest
 
-The OCI release bundle contains generated ontology exports/schemas/provenance, migration plan, test report, SBOM/build provenance and an immutable manifest. Runtime references OCI digests, never mutable tags such as `latest`.
+The OCI release bundle contains generated ontology exports/schemas/provenance, the exact executable migration scripts and plan, test report, SBOM/build provenance, and an immutable manifest. Runtime references OCI digests, never mutable tags such as `latest`.
 
 The manifest records:
 
 - release ID, SemVer, Git commit/tag and proposal/approval IDs;
 - release-bundle and connector/action image digests;
-- model, mapping, identity, query, action and migration digests;
+- model, mapping, identity, query, and action digests;
+- the ordered migration IDs, paths, and payload digests contained in the bundle;
 - compiler/dependency-lock and test-report digests;
 - compatibility, activation prerequisites and rollback constraints.
 
@@ -145,7 +146,7 @@ PostgreSQL stores a verified manifest copy plus publication/activation state for
 CI tests migrations but never applies them to production:
 
 1. The deployment operator starts an isolated runner using the published bundle digest.
-2. The runner locks the environment, verifies the current schema, applies only manifest-listed migrations and records their digests/results.
+2. The runner locks the environment, verifies the current schema and each bundled script digest, applies only manifest-listed migrations from that bundle, and records their digests/results.
 3. Failed transactional migrations roll back. Destructive/non-transactional changes require an approved recovery plan and compatible parallel read model.
 4. After smoke tests, the operator requests activation with the migration/smoke-run IDs.
 5. The runtime release manager verifies approvals, Git/OCI digests, migration state and compatibility; loads versioned projections; then changes the active pointer transactionally.
