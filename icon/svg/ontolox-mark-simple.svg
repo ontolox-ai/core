@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="256" height="256" role="img" aria-label="Ontolox mark, simplified">
+  <g transform="rotate(45 32 32)" fill="none" stroke-linecap="round" stroke-width="5.6">
+    <g stroke="#2E3440"><path d="M8.0 16.0 L56.0 16.0"/><path d="M8.0 48.0 L56.0 48.0"/></g>
+    <g stroke="#5E81AC"><path d="M16.0 8.0 L16.0 56.0"/><path d="M48.0 8.0 L48.0 56.0"/></g>
+  </g>
+</svg>
