@@ -1,120 +1,238 @@
-# MVP Scope
+# 99x MVP Scope — Project Delivery Assurance
 
-## Target users and priority use cases
+## Purpose
 
-The MVP is proven against **99x operations**: a live professional-services enterprise whose people, projects, commercial pipeline, delivery work, and facilities already span many systems.
+99x is the first design partner and proving ground. The MVP proves one complete, trustworthy loop:
 
-### Primary users
+> **Project, team, audit, risk, and resource-allocation data → evidence-backed ontology proposal → approved release → cross-domain delivery-assurance answer with field lineage → governed risk-owner assignment**
 
-- 99x leadership who need a single, governed view of how the company is operating.
-- Delivery, people, finance, sales, marketing, and facilities owners who work across systems today.
-- Platform and data teams responsible for connecting those systems and keeping meaning consistent.
-- Application and AI-agent builders who need safe, business-level data and action interfaces.
+The MVP succeeds when 99x can identify active projects needing attention, explain why using current evidence, show the accountable teams/people, and safely assign an owner to an open material risk. It does not attempt to model all 99x operations.
 
-### Design partner and proving ground
+## Primary users
 
-99x is the first operational domain. The ontology is built from how 99x actually works—not from a generic industry template. Success is measured by whether 99x can ask cross-system questions with lineage and execute a limited set of governed actions.
+- A delivery or portfolio owner who needs a current view of project assurance.
+- A project/team lead who needs risks, compliance findings, and capacity constraints in context.
+- An audit/compliance owner who validates compliance meaning and finding status.
+- A resource manager who validates allocation semantics and coverage.
+- A platform/data owner who approves source access, mappings, identity keys, and runtime health.
+- An application or AI-agent builder who consumes the governed query/action contracts.
 
-### 99x operational model
+## Selected vertical slice
 
-The initial ontology covers these business objects and the relationships between them:
+### Business objects
 
-- **Employees:** identity, role, team, location, utilisation, allocation, and employment status.
-- **Employee HR activities:** leave requests and balances, training enrolments and completions, onboarding, and other people-ops events.
-- **Projects:** engagements, teams, customers, timelines, delivery status, and commercial terms.
-- **Project risks:** identified risks, owners, likelihood, impact, mitigation, and status against the related project.
-- **Project compliance:** contractual obligations, audit evidence, process controls, and exception cases.
-- **Client relations:** account ownership, stakeholder contacts, relationship health, meetings, and ongoing engagement context.
-- **Employee career development:** skills, goals, reviews, learning, progression, and succession signals.
-- **Financial information:** revenue, cost, margins, forecasts, invoices, and project economics.
-- **Prospects and sales:** accounts, opportunities, proposals, stages, owners, and conversion history.
-- **Marketing activities:** campaigns, events, content, leads, and attribution to the pipeline.
-- **Facilities and buildings:** offices, rooms, capacity, occupancy, and workplace services.
-- **Engineer work entries:** commits, pull requests, time entries, and issues linked to people and projects.
-- **Customer complaints:** cases, severity, owners, related projects or contracts, and resolution state.
+| Object | MVP properties |
+| --- | --- |
+| **Project** | Source ID/project code, name, lifecycle status, start/end dates, accountable owner |
+| **Team** | Source ID, name, active status, team lead |
+| **Person** | Stable workforce ID, display name, active status; no payroll or sensitive HR attributes |
+| **ProjectTeamAssignment** | Project, team, responsibility, effective dates |
+| **Risk** | Source ID, project, category, likelihood, impact/rating, status, owner, review date |
+| **ComplianceFinding** | Source ID, project, audit/control reference, status, severity, due date, owner |
+| **ResourceAllocation** | Source ID, project, team/person, role or skill category, period, requested and committed capacity |
 
-### Initial use cases
+Only properties required by the read, action, policy, identity, or lineage acceptance tests enter the MVP ontology.
 
-- **Delivery and utilisation:** who is on which project, how capacity is used, and where allocation, leave, or compliance is at risk.
-- **Project risk and compliance:** surface open risks, owners, and control exceptions against live delivery and contract obligations.
-- **Career, HR, and staffing:** match employee skills, leave, training, development goals, and availability to project demand.
-- **Client relations:** connect account health, stakeholders, and complaints to the responsible project, team, and commercial owner.
-- **Commercial and financial performance:** connect pipeline, live projects, invoices, and margins without reconciling spreadsheets.
-- **Engineering work evidence:** relate commits, pull requests, issues, and time entries to projects, customers, and people.
-- **Service and complaints:** close the loop from customer issues back to the responsible project, team, and contract.
-- **Workplace operations:** relate people and teams to facilities, occupancy, and building services.
-- **Enterprise AI grounding:** give copilots and agents permission-aware 99x context, source lineage, and approved action tools.
+### Core ontology relationships
+
+```mermaid
+graph LR
+    PROJECT[Project] --> ASSIGNMENT[ProjectTeamAssignment]
+    ASSIGNMENT --> TEAM[Team]
+    TEAM --> PERSON[Person]
+    PROJECT --> RISK[Risk]
+    PROJECT --> FINDING[ComplianceFinding]
+    PROJECT --> ALLOCATION[ResourceAllocation]
+    ALLOCATION --> TEAM
+    ALLOCATION --> PERSON
+    PERSON -->|owns| RISK
+    PERSON -->|owns| FINDING
+```
+
+Reviewed LinkML in Git defines this semantic model. Generated representations are release artefacts; source applications remain authoritative for business records.
+
+### Source roles
+
+| Source role | MVP data | Access |
+| --- | --- | --- |
+| **Project portfolio source** | Projects, lifecycle status, dates, accountable owner | Read-only |
+| **Team/person directory** | Active people, teams, leads, and memberships | Read only; minimum approved fields |
+| **Audit/compliance source** | Project findings, controls/audits, severity, due dates, owners | Read-only |
+| **Risk register** | Project risks, ratings, state, review date, owner | Read approved fields; write risk owner only |
+| **Resource-planning source** | Requested and committed capacity by project, team/person, and period | Read-only |
+| **Evidence/document store** | Optional audit evidence referenced by findings | Bounded evidence access; not a mandatory runtime join |
+
+One 99x system may satisfy several source roles. Record the actual products/endpoints, owners, rate limits, authentication, data classifications, and conditional-update/idempotency support before implementation. Reuse existing supported interfaces; do not build a generic connector abstraction first.
+
+### Identity and join rules
+
+- Project code is the declared cross-system project key.
+- Each team, person, risk, compliance finding, and resource allocation uses its source's immutable identifier.
+- The team/person directory is authoritative for active workforce identity. Email and display name are attributes, not keys.
+- The risk register's user identifier is the write value for risk ownership and must map exactly to an active workforce identity.
+- Project-team assignments and allocations are effective-dated.
+- Every canonical object receives a stable IRI derived from tenant, object type, and canonical identifier.
+- Missing, duplicate, or conflicting keys are quarantined and reported; the system never silently guesses a join.
+
+Every risk, finding, and allocation must contain the project code or use one approved, versioned crosswalk with an owner, effective dates, and ambiguity tests. If profiling cannot establish a reliable structured join, the affected source role is excluded and the answer is reported as partial. Probabilistic matching, document-derived runtime joins, and unrestricted `owl:sameAs` reasoning are deferred.
+
+## Scenarios
+
+### Read
+
+> **Which active 99x projects require attention because of material open risks, overdue or non-compliant audit findings, or resource-allocation gaps—and which teams and people are accountable?**
+
+Canonical predicates are versioned in the query contract:
+
+- active project = lifecycle status `active`;
+- material risk = status `open` with approved canonical rating `high` or `critical`;
+- compliance concern = an open finding that is overdue, non-compliant, or above the approved severity threshold;
+- allocation gap = committed capacity below requested capacity by the approved materiality threshold for the selected period;
+- accountable team/person = an active, effective-dated assignment or explicit source owner.
+
+Profiling maps concrete source values to canonical enums, `other`, or `unknown`. Domain owners approve mappings and the allocation materiality threshold before release. Missing demand or allocation data produces `unknown`, never an inferred shortage.
+
+The answer must:
+
+- use one versioned query contract over the materialised cross-source slice;
+- return the project, attention reasons, relevant risk/finding/allocation values, and accountable teams/people;
+- enforce object/field permissions and minimise person data;
+- cite the source record/version, extraction run, mapping, and model release for every returned field;
+- report per-source freshness and whether the answer is `complete`, `partial`, or `stale`;
+- surface unresolved identities, missing joins, and unavailable sources.
+
+Natural-language exploration may only select and parameterise this approved query contract. Arbitrary LLM-generated SQL/API plans are out of scope.
+
+### Write/action
+
+> **Assign or change the owner of an open high/critical project risk in the risk register.**
+
+The action must:
+
+- accept a canonical risk IRI, approved person identifier, expected source version, and idempotency key;
+- resolve the person to the risk register's active user key;
+- validate the active action contract, JSON Schema, risk state/rating, identity mapping, business rules, and permissions;
+- require a named approver to approve the exact immutable payload identified by a SHA-256 content digest;
+- update only the owner field using source-native conditional update/idempotency where available;
+- avoid duplicate writes on replay and blind retries after an uncertain timeout;
+- record request, approval, execution, result, model/contract version, and reconciliation state.
+
+A changed payload, source version, action contract, or model release requires new approval.
 
 ## Product principles
 
-1. **Business meaning first.** Technical structures matter because they support a clear representation of the domain.
-2. **Evidence over assertion.** Every semantic proposal and generated mapping should be explainable, traceable, and measurable.
-3. **Human authority, agent leverage.** Automate labour, not accountability.
-4. **Federate by default; materialise with intent.** Preserve systems of record while optimising selectively for operational workloads.
-5. **Read and act through the same model.** Insight without governed execution is incomplete.
-6. **Change is a first-class object.** Versioning, impact analysis, monitoring, and repair are core product capabilities.
-7. **Secure by construction.** Permissions, policy, privacy, and auditability travel with data, meaning, and action.
+1. **Business meaning first.** Model only what the selected assurance result needs.
+2. **Evidence over assertion.** Every proposal and mapping links to bounded source evidence and tests.
+3. **Human authority, agent leverage.** Agents propose; accountable owners approve runtime-trusted changes.
+4. **Materialise the proof; federate deliberately later.** Source systems remain authoritative while the narrow cross-system slice is materialised for reliability.
+5. **Read and act through the same release.** Query and action contracts pin the same model, identity, and mapping version.
+6. **Make failure visible.** Staleness, ambiguity, partial answers, conflicts, and uncertain writes are typed outcomes.
+7. **Secure by construction.** Least privilege, data minimisation, retention, field policy, approvals, and audit are part of each contract.
 
-## Initial MVP scope
+## Included capabilities
 
-The MVP should prove the complete loop against 99x operations rather than attempt universal enterprise coverage.
+- Read-only connectors for the existing 99x systems that satisfy the five source roles; co-located roles use one deployed connector.
+- One bounded risk-owner action adapter.
+- Bounded source registration, access approval, schema profiling, and sample analysis.
+- One orchestrated agent-assisted pipeline that proposes LinkML model, mapping, identity, and contract patches.
+- A proposal-inbox workbench with evidence, diffs, constrained amendment, and domain/technical approval.
+- One Git monorepo containing LinkML, integration code, mappings, contracts, migrations, synthetic fixtures, and tests.
+- An OCI registry containing digest-pinned connector images and generated release bundles: RDF/OWL, SHACL, JSON-LD, JSON Schema, provenance, reports, SBOM, and build provenance.
+- PostgreSQL model/identity registry, materialised assurance read model, governance, field lineage, and append-only audit.
+- REST/OpenAPI query and action endpoints; optional thin MCP wrappers.
+- OIDC integration, explicit roles/resource classifications, and manual action approval.
+- Poll-based synchronisation, freshness timestamps, schema hashes, mapping tests, and alerts.
+- Agent evaluation based on proposal acceptance/correction, evidence completeness, invalid-output rate, and reviewer effort.
+- Release activation and rollback through an immutable manifest and atomic active-version pointer.
 
-**MVP outcome:** connect a small set of 99x systems, automatically construct a reviewable ontology of 99x operations, answer cross-system questions with lineage, and execute a limited set of governed write-back actions.
+## Explicitly deferred
 
-**Included capabilities:**
+- Project financials, timesheets, payroll, performance, sensitive HR data, skills inference, and individual productivity scoring.
+- Client relations, complaints, sales, marketing, facilities, and broad executive reporting.
+- Audit evidence interpretation as an authoritative compliance decision.
+- Generic connector generation, a connector marketplace, and autonomous credential handling.
+- Live runtime federation and runtime caches.
+- General natural-language query planning, GraphQL, GQL, and arbitrary SPARQL.
+- Automatic model/mapping release and agent-led production repair.
+- Probabilistic entity resolution.
+- Multi-step remediation workflows and source writes beyond risk-owner assignment.
+- Fuseki/live OWL reasoning, property-graph projections, and large-scale operational graph materialisation.
+- Valkey, dedicated vector infrastructure, OpenLineage deployment, OPA/Cedar, SCIM, Kafka, CDC, and CloudEvents unless an existing platform already supplies a required capability.
+- Complex multi-region and multi-tenant governance.
 
-- Connectors for a relational database, a SaaS application, file/document storage, and a REST API—used against 99x sources such as HR, project, finance, CRM, engineering, and facilities systems.
-- Guided agent-led source discovery, schema profiling, and sample-data analysis.
-- A semantic workbench where agents propose entities, relationships, definitions, and mappings for the 99x operational model, for review.
-- A versioned ontology graph with provenance, confidence, and source lineage.
-- Ontology query API and natural-language exploration with cited source paths.
-- Policy-based access control and approval workflows, including tighter controls for financial, people, and customer data.
-- One read scenario and one write/action scenario drawn from 99x operations—for example, a utilisation or complaint-resolution question, and a governed update such as assigning an owner or recording a compliance exception.
-- Monitoring for source freshness, schema drift, mapping health, and agent evaluation.
+## Acceptance gates
 
-**Explicitly deferred:** a broad connector marketplace, fully autonomous production changes, universal domain coverage beyond 99x operations, complex multi-region governance, and large-scale operational graph materialisation.
+99x may revise these initial budgets once during source profiling with documented owner approval:
 
-## Future roadmap
+- materialised query latency: p95 ≤ 2 seconds at expected 99x volume;
+- project, risk, and resource-allocation freshness: ≤ 4 hours during agreed business hours;
+- team/person and audit/compliance freshness: ≤ 24 hours;
+- post-approval risk-owner action response: ≤ 10 seconds while the risk source is available;
+- source access to first candidate release: ≤ 5 working days after credentials, documentation, and source-owner answers are available;
+- proposal batches: ≤ 20 semantic/mapping changes, with median active reviewer time ≤ 30 minutes after the baseline release.
 
-### Phase 1 — Prove the ontology loop on 99x operations
+The following correctness gates are non-negotiable:
 
-Deliver the MVP for the 99x operational model, demonstrate time-to-ontology, and validate reliable read and controlled write-back across people, HR, projects, risks, clients, commercial, engineering, and workplace data.
+### Connectivity and evidence
 
-### Phase 2 — Expand autonomy and coverage
+- Every required source role is bound to an approved least-privilege interface; unavailable roles are declared rather than hidden.
+- Samples are classified, minimised, retention-bound, and never placed in agent context beyond policy.
+- Connector source commit, OCI image digest, environment binding, schema hash, and source owner are recorded.
+- No secret or identifiable source sample exists in Git, OCI release artefacts, CI logs, or test fixtures.
 
-Add more connector patterns, reusable ontology templates derived from the 99x model, schema-drift remediation, richer workflow actions, and multi-agent collaboration across technical and business roles.
+### Model and proposals
 
-### Phase 3 — Build the enterprise ontology network
+- The connector/action code, ontology objects/relationships, mappings, identity rules, migrations, query, and action contracts are reviewed and released from one candidate commit.
+- Every accepted proposal element has rationale and resolvable evidence.
+- Every release builds digest-pinned images and generates/parses the portable artefacts; outputs pass connector, migration, conformance, golden-query, action, vulnerability, and SBOM checks.
+- Domain/governance approvals and technical pull-request reviews bind to the exact candidate commit SHA recorded in the release manifest.
+- Breaking changes cannot activate without migration and rollback plans.
 
-Support cross-domain ontology composition, reusable industry models, policy-as-code, simulation and impact analysis, high-scale graph workloads, and a developer ecosystem for ontology-native applications and agents.
+### Identity and read
 
-### Phase 4 — Autonomous enterprise operations
+- Every joined record follows a declared exact key; ambiguous records are never represented as resolved.
+- A versioned, de-identified golden dataset covers: a high-risk project, overdue compliance finding, material allocation gap, multiple attention reasons, healthy/inactive exclusions, missing project key, ambiguous person mapping, unmapped enum, stale source, and unavailable source.
+- The golden dataset produces the agreed attention reasons, accountable parties, and completeness status.
+- One hundred percent of returned business fields carry the required lineage identifiers.
+- Stale/unavailable sources and excluded ambiguous records make the response partial/stale rather than silently complete.
 
-Enable policy-bounded agents that continuously detect conditions, reason over enterprise state, propose decisions, and execute approved operations with explainability and full audit trails.
+### Action and governance
 
-## Positioning and messaging
+- Only the owner of an open high/critical risk can be changed.
+- No write executes without authentication, authorisation, valid contract, expected source version, and required approval.
+- Approval records the authenticated approver and SHA-256 digests of the payload, source record/version, action contract, and model release.
+- Replaying an idempotency key cannot duplicate a successful write.
+- Stale versions fail safely; uncertain timeouts enter reconciliation rather than blind retry.
+- Every attempt and state transition is auditable, including rejection and failure.
 
-### Category
+### Operations and learning
 
-**AI-native Ontology Operating System**
+- Per-source freshness, connector failures, schema changes, mapping tests, identity ambiguity, query health, and action reconciliation are observable.
+- A previous validated model release can be reactivated using the documented rollback procedure.
+- Agent proposal quality and human correction are measured without production auto-apply.
 
-### Core positioning
+## Roadmap
 
-Ontolox.ai turns fragmented enterprise systems into a living, operational ontology that AI agents continuously build, maintain, and use to drive governed decisions and actions.
+### Phase 1 — Prove project delivery assurance
 
-### One-liner
+Deliver the defined cross-domain read and risk-owner action with lineage, approvals, explicit partial/stale outcomes, and measurable reviewer effort.
 
-**Ontolox is the AI-native operating system that gives your enterprise a shared model of itself—and the ability to act on it.**
+### Phase 2 — Expand delivery operations
 
-### Short pitch
+Add evidence-backed capacity forecasting, compliance-remediation workflows, richer team/skill modelling, and selected client/commercial context.
 
-Enterprise AI fails when it lacks trusted context and safe access to real operations. Ontolox agents discover and connect your systems, build and maintain the business ontology that unifies them, and expose it as a governed interface for questions, workflows, applications, and write-back actions.
+### Phase 3 — Add advanced semantic and policy capabilities
 
-The first proving ground is 99x: employees, HR activities, projects, risks, compliance, client relations, careers, finance, sales, marketing, facilities, engineering work, and customer complaints—unified into one operational model.
+Evaluate live RDF/SPARQL/OWL reasoning, policy-as-code, OpenLineage interoperability, entity-resolution assistance, simulation, and higher-scale workloads against demonstrated needs.
 
-### Messaging pillars
+### Phase 4 — Policy-bounded autonomous operations
 
-- **From disconnected data to business reality:** unify systems around the objects, relationships, and rules that matter.
-- **From consulting projects to continuous intelligence:** agents make ontology creation and maintenance an always-on capability.
-- **From answers to outcomes:** read, write, and act through one governed enterprise model.
-- **From AI experiments to trusted operations:** ground every agent in permissions, lineage, policy, and enterprise semantics.
+Permit narrowly scoped automatic repair or execution only after proposal/action quality, rollback, reconciliation, and governance controls are proven.
+
+## Positioning
+
+**Category:** AI-native Ontology Operating System
+
+**One-liner:** Ontolox gives an enterprise a shared operational model of itself—and a governed way to act through it.
+
+The 99x MVP proves that claim across projects, teams, audit/compliance, risks, and resource allocations before broader operational coverage.

@@ -4,9 +4,9 @@
 
 Ontolox.ai is an AI-native Ontology Operating System for the enterprise. It turns an organisation's fragmented systems, data, documents, and operational knowledge into a living ontology: a trusted, business-readable model of how the enterprise works that can both understand data and safely act on it.
 
-Unlike ontology programmes that depend on long consulting engagements, manual semantic modelling, and prebuilt integrations, Ontolox uses coordinated AI agents to discover sources, establish and maintain integrations, explore schemas and samples, infer domain concepts and relationships, and keep mappings current as systems change. The result is an operational ontology layer that gives people and software a consistent way to query, reason over, and write back to the enterprise.
+Unlike ontology programmes that depend on long consulting engagements, manual semantic modelling, and prebuilt integrations, Ontolox uses coordinated AI assistance to discover sources, propose and test integrations, explore schemas and samples, infer domain concepts and relationships, and propose mapping repairs as systems change. Accountable owners approve trusted model and production-access changes; runtime services execute approved contracts. The result is an operational ontology layer that gives people and software a consistent way to query and safely write back to the enterprise.
 
-Ontolox makes enterprise ontology engineering an autonomous, governed software process.
+Ontolox makes enterprise ontology engineering an agent-assisted, governed software process, with autonomy introduced only where quality, rollback, and policy controls have been proven.
 
 ## The problem
 
@@ -31,7 +31,7 @@ That ontology must be able to evolve at software speed. AI agents should perform
 Ontolox is built on three beliefs:
 
 1. **The ontology is the enterprise interface.** It expresses business objects, relationships, rules, and actions in terms users and AI systems can understand.
-2. **Ontology engineering should be autonomous by default and human-governed by design.** Agents propose, build, test, monitor, and repair; domain experts approve and steer where confidence or risk requires it.
+2. **Ontology engineering should be agent-led and human-governed by design.** Agents gather evidence and propose, generate, test, monitor, and repair; domain and technical owners approve every change that affects the runtime-trusted model or production access.
 3. **Context is only useful when it can drive work.** The same model that answers a question should be able to initiate a governed update, workflow, or write-back to the system of record.
 
 ## What is an AI-native Ontology Operating System?
@@ -48,13 +48,15 @@ It unifies five capabilities in one governed platform:
 
 The ontology is therefore not a documentation artefact layered over data. It is a persistent operational model that connects enterprise intent to enterprise systems.
 
-## The four agentic pipelines
+## Four logical product capabilities
+
+These capabilities describe the target product. The first implementation runs discovery, profiling, proposal, review, and validation as one orchestrated pipeline; it does not require four independently deployed autonomous agent systems.
 
 ### 1. Source discovery and integration
 
 This pipeline creates the enterprise's connectivity foundation. Discovery agents inventory databases, warehouses, APIs, file stores, SaaS applications, event streams, and unstructured repositories. They inspect available metadata, interfaces, permissions, and change signals to identify viable sources.
 
-Integration agents then propose and configure connectors, authentication patterns, extraction methods, sync schedules, and change-data-capture strategies. They generate integration definitions, validate them in a controlled environment, monitor reliability, and recommend repairs when a source changes. Human approval gates are applied to credentials, production access, and sensitive data handling.
+Integration agents propose connector metadata, authentication patterns, extraction methods, and sync schedules. They generate versioned integration definitions and validate them in a controlled profile mode. Technical owners approve production access and secret references; runtime deploys the approved connector version and reports health or schema changes. CDC is introduced only when polling cannot meet an agreed freshness target.
 
 **Output:** governed source connections with technical metadata, freshness signals, and documented operational contracts.
 
@@ -76,9 +78,9 @@ They use multiple evidence types—schemas, samples, documentation, APIs, dashbo
 
 ### 4. Ontology operations
 
-Operations agents make the ontology useful in daily work. They translate natural-language questions, analytical requests, application calls, and agent tasks into governed ontology queries. They can combine data across source systems, reason over relationships and policy, and return answers with lineage.
+Deterministic query and action services make the ontology useful in daily work. Applications call versioned contracts directly; AI agents may translate natural-language requests into approved query templates or action requests. They cannot invent unrestricted source queries, bypass policy, or execute unapproved writes.
 
-For approved actions, the same agents resolve an intent—such as updating an account, opening a case, assigning inventory, or launching a workflow—into validated writes against the correct systems of record. Action policies, permissions, confirmation requirements, simulation, and audit trails protect operational integrity.
+For approved actions, the action service resolves an intent—such as updating an account, opening a case, assigning inventory, or launching a workflow—through a versioned adapter and contract. Schema validation, permissions, exact-payload approval, idempotency, source-version checks, reconciliation, and audit trails protect operational integrity.
 
 **Output:** a consistent read/write/action interface for people, applications, and AI agents.
 
@@ -95,7 +97,7 @@ It holds:
 - **Operational contracts:** data freshness, quality expectations, access policies, write-back semantics, and action approvals.
 - **Knowledge of change:** versions, confidence, proposed updates, approvals, and impact analysis.
 
-The layer can be implemented as a graph-oriented semantic core with supporting metadata, vector retrieval, rules, and data-access services. It is not required to be a single physical datastore. Ontolox chooses federated access, materialised views, graph projections, or a unified operational store based on the workload.
+The layer is logical, not a requirement for one physical datastore. The MVP keeps ontology and integration source—LinkML, connectors, mappings, contracts, migrations, and tests—in one Git monorepo; CI publishes generated standards artefacts and connector images to an OCI-compatible registry; PostgreSQL operates the approved projections and runtime state. Future workloads may justify a live semantic graph, federated access, caches, or graph projections.
 
 ## Read, write, and action capability
 
@@ -117,31 +119,47 @@ Ontolox agents operate as a continuous lifecycle rather than a one-time implemen
 2. Gather evidence and assess impact on existing mappings, definitions, downstream queries, and actions.
 3. Propose a connector change, pipeline repair, ontology update, or mapping revision with confidence and rationale.
 4. Test the proposal in a safe environment against policy, quality checks, and known behaviours.
-5. Apply it automatically within policy or route it to the appropriate technical or domain owner for approval.
+5. Store non-authoritative observations automatically; route every runtime-trusted model, mapping, identity, connector-access, or action-contract change to the appropriate owner for approval.
 6. Monitor the live result, preserve lineage and version history, and learn from feedback.
 
-Automation is bounded by governance. Low-risk metadata enrichment may be automatic; changes that affect regulated definitions, production writes, or executive metrics require explicit review.
+Automation is bounded by governance. Non-authoritative catalogue observations—profile runs, freshness, and schema hashes—may be recorded automatically. Any enrichment of the active model, mapping, identity rule, source access, or action contract requires explicit accountable-owner review.
 
 ## Conceptual architecture
 
 | Layer | Primary responsibility |
-|---|---|
+| --- | --- |
 | **Enterprise sources** | Operational systems, warehouses, APIs, files, documents, events, and knowledge repositories. |
 | **Connectivity and data plane** | Connectors, authentication, extraction, change capture, transformation, federation, and materialisation. |
-| **Agent orchestration plane** | Specialised agents for discovery, integration, exploration, semantic modelling, operations, monitoring, and remediation. |
+| **Agent orchestration plane** | Evidence gathering and constrained proposals across discovery, integration, exploration, semantic modelling, monitoring, and remediation. |
 | **Ontology and knowledge plane** | Entities, relationships, rules, mappings, lineage, versioning, evidence, confidence, graph services, and retrieval. |
 | **Governance and control plane** | Identity, entitlements, policy, approval workflows, privacy controls, evaluation, observability, and audit. |
 | **Experience and action plane** | Search, analytical apps, APIs, SDKs, workflows, copilots, autonomous agents, and controlled write-back. |
 
+## First implementation profile
+
+The 99x MVP deliberately proves one vertical slice before broad enterprise coverage:
+
+- **Scenario:** unresolved customer complaints connected to active/at-risk projects and current owners.
+- **Sources:** one CRM REST API and one project SQL database; optional documents are evidence, not a mandatory live join.
+- **Model:** Complaint, Project, Customer, Owner, and Contract only where needed.
+- **Read:** a materialised, versioned query contract with field-level lineage, freshness, and explicit partial/stale outcomes.
+- **Write:** one governed CRM owner-assignment action with exact-payload approval, idempotency, source-version checks, and reconciliation.
+- **Source and delivery:** one Git monorepo for ontology/integration source and one OCI registry for digest-pinned release bundles and connector images.
+- **Runtime:** PostgreSQL; reuse deployment OIDC and secret management; object storage only when document evidence is required.
+- **Interfaces:** REST/OpenAPI, with optional MCP wrappers and natural-language selection of approved query templates.
+- **Deferred:** live runtime federation, live OWL/SPARQL reasoning, automatic model repair, general NL planning, GraphQL/GQL, and extra infrastructure without a measured requirement.
+
+See [samples/99x/mvp-scope.md](./samples/99x/mvp-scope.md) for acceptance gates, [docs/artifact-management.md](./docs/artifact-management.md) for artefact ownership and Git/OCI flow, and [docs/storage.md](./docs/storage.md) for the accepted storage profile.
+
 ## Differentiation
 
 | Dimension | Traditional ontology platform | Palantir-style ontology approach | Ontolox.ai |
-|---|---|---|---|
-| Creation model | Manual modelling by specialists | Powerful platform, typically configured through implementation programmes | Agents discover, propose, generate, test, and continuously refine models and mappings |
-| Integration model | Connector-led, hand-configured | Broad integration tooling, often implementation-intensive | Agents autonomously configure and maintain integrations with governed approvals |
-| Semantic lifecycle | Project-based and documentation-heavy | Operational but commonly expert-led | Continuous, evidence-backed, versioned, and agent-maintained |
+| --- | --- | --- | --- |
+| Creation model | Manual modelling by specialists | Powerful platform, typically configured through implementation programmes | Agents gather evidence and propose changes; deterministic tooling generates/tests artefacts; accountable owners approve releases |
+| Integration model | Connector-led, hand-configured | Broad integration tooling, often implementation-intensive | Agents propose and test versioned integration definitions; approved runtime connectors execute and report drift |
+| Semantic lifecycle | Project-based and documentation-heavy | Operational but commonly expert-led | Continuous, evidence-backed, versioned, and maintained through agent-proposed changes |
 | AI role | Often an add-on for search or assistance | AI runs on top of a configured ontology | AI is native to the creation, maintenance, and operation of the ontology |
-| Adaptation to change | Manual remediation | Requires platform and delivery-team intervention | Detect–assess–test–repair loop driven by agents and policy |
+| Adaptation to change | Manual remediation | Requires platform and delivery-team intervention | Detect–assess–test–propose loop; policy and accountable owners govern repair promotion |
 | User experience | Technical semantic tooling | Sophisticated enterprise applications | Business-readable enterprise interface for humans and AI agents, with lineage and action controls |
 
-The distinction is not “Palantir, with a chatbot.” Palantir demonstrated the value of an operational ontology. Ontolox is designed to make building and evolving that ontology an autonomous, repeatable software capability.
+The distinction is not “Palantir, with a chatbot.” Palantir demonstrated the value of an operational ontology. Ontolox is designed to make building and evolving that ontology an evidence-backed, governed, repeatable software capability that can earn bounded autonomy over time.
