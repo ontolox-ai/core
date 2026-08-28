@@ -1,0 +1,160 @@
+id: https://ontolox.ai/99x/delivery-assurance
+name: delivery-assurance
+description: >-
+  Canonical LinkML model for the 99x project-delivery-assurance MVP. Covers
+  projects, teams, people, project-team assignments, risks, compliance
+  findings, and team-level resource allocations. Restricted to the supported
+  generator profile; only properties required by the read, action, policy,
+  identity, or lineage acceptance tests are modelled.
+version: 0.1.0
+license: internal
+prefixes:
+  linkml: https://w3id.org/linkml/
+  x99: https://ontolox.ai/99x/
+default_prefix: x99
+default_range: string
+
+imports:
+  - linkml:types
+  - ../vocabularies/delivery-enums
+
+classes:
+  Project:
+    description: A 99x delivery project from the project portfolio source.
+    attributes:
+      project_code:
+        identifier: true
+        description: Declared cross-system project key.
+      name:
+        required: true
+      lifecycle_status:
+        range: LifecycleStatus
+        required: true
+      start_date:
+        range: date
+      end_date:
+        range: date
+      accountable_owner:
+        range: Person
+        description: Must resolve to an active directory person ID or approved crosswalk.
+
+  Team:
+    description: A delivery team from the O365 (Microsoft Entra) directory.
+    attributes:
+      team_id:
+        identifier: true
+        description: Immutable Entra group object ID.
+      name:
+        required: true
+      active:
+        range: boolean
+        required: true
+      team_lead:
+        range: Person
+        description: Designated lead; ambiguous multi-owner groups are quarantined.
+      members:
+        range: Person
+        multivalued: true
+
+  Person:
+    description: >-
+      An active workforce member from the O365 directory. Deliberately
+      minimised: no payroll, performance, or other sensitive HR attributes.
+    attributes:
+      person_id:
+        identifier: true
+        description: Immutable Entra user object ID; the stable workforce ID.
+      display_name:
+        required: true
+      active:
+        range: boolean
+        required: true
+
+  ProjectTeamAssignment:
+    description: >-
+      Effective-dated responsibility of a team on a project. Canonical key is
+      the source assignment ID, or the approved composite
+      (project code, team ID, responsibility, valid-from) when none exists.
+    attributes:
+      assignment_id:
+        identifier: true
+      project:
+        range: Project
+        required: true
+      team:
+        range: Team
+        required: true
+      responsibility:
+        range: ResponsibilityType
+        required: true
+      valid_from:
+        range: date
+        required: true
+      valid_to:
+        range: date
+
+  Risk:
+    description: A project risk from the risk register; owner is writable through the governed action.
+    attributes:
+      risk_id:
+        identifier: true
+        description: Immutable risk-register identifier.
+      project:
+        range: Project
+        required: true
+      category:
+      status:
+        range: RiskStatus
+        required: true
+      rating:
+        range: RiskRating
+        required: true
+      owner:
+        range: Person
+        description: Resolved through the risk-owner crosswalk; the register's active user ID is preserved for writes.
+      review_date:
+        range: date
+
+  ComplianceFinding:
+    description: An audit/compliance finding attached to a project.
+    attributes:
+      finding_id:
+        identifier: true
+      project:
+        range: Project
+        required: true
+      control_reference:
+        required: true
+        description: Audit or control reference in the compliance source.
+      status:
+        range: FindingStatus
+        required: true
+      severity:
+        range: FindingSeverity
+        required: true
+      due_date:
+        range: date
+      owner:
+        range: Person
+
+  ResourceAllocation:
+    description: >-
+      Requested versus committed capacity for one project, team, and canonical
+      calendar month, normalised to FTE in the agreed 99x reporting timezone.
+    attributes:
+      allocation_id:
+        identifier: true
+      project:
+        range: Project
+        required: true
+      team:
+        range: Team
+        required: true
+      canonical_month:
+        range: date
+        required: true
+        description: First day of the half-open canonical calendar month.
+      requested_fte:
+        range: decimal
+      committed_fte:
+        range: decimal

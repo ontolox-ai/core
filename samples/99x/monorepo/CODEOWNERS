@@ -1,0 +1,14 @@
+# Technical code owners per path. Domain, data-owner, and action approvals
+# happen in the workbench (PostgreSQL governance), not in this file.
+
+*                       @99x/platform-engineering
+
+/ontology/              @99x/ontology-owners
+/mappings/              @99x/data-owners @99x/ontology-owners
+/contracts/queries/     @99x/delivery-domain-owners
+/contracts/actions/     @99x/risk-action-owners @99x/platform-engineering
+/contracts/operational/ @99x/data-owners
+/integrations/people/   @99x/directory-source-owners @99x/platform-engineering
+/migrations/            @99x/platform-engineering @99x/database-owners
+/fixtures/              @99x/delivery-domain-owners
+/.ci/                   @99x/platform-engineering

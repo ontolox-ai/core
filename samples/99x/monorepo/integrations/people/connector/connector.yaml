@@ -1,0 +1,42 @@
+# Reviewed connector template for the team/person directory source role.
+# Environment bindings (tenant ID, schedule, enabled fields) live in
+# PostgreSQL; secret values live in the secret manager. This file only
+# declares what the connector supports and its non-environment defaults.
+
+connector: people-directory
+source_role: team-person-directory
+source_system: microsoft-365-directory
+protocol: microsoft-graph-rest
+api_version: v1.0
+access: read-only
+
+capabilities:
+  delta_query: true            # /users/delta and /groups/delta incremental sync
+  field_selection: true        # $select enforced on every request
+  pagination: odata-next-link
+  conditional_update: not-applicable   # read-only source role
+
+# Data minimisation: the only fields this connector may ever request.
+# Enabling a subset per environment happens in the PostgreSQL binding;
+# adding a field here requires a new reviewed release.
+supported_fields:
+  user:
+    - id                # immutable Entra object ID → Person.person_id
+    - displayName       # → Person.display_name
+    - accountEnabled    # → Person.active
+  group:
+    - id                # immutable Entra group object ID → Team.team_id
+    - displayName       # → Team.name
+    - membershipRule    # profiling only; delivery-team classification evidence
+  group_relations:
+    - members           # user object IDs only
+    - owners            # candidate team lead; ambiguity rules in the mapping
+
+defaults:
+  page_size: 100
+  request_timeout_seconds: 30
+  retry:
+    max_attempts: 4
+    backoff: exponential
+
+secret_reference: secret://99x/people/reader   # opaque; resolved at runtime

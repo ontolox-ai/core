@@ -1,0 +1,36 @@
+# Operational contract for the O365 directory source role: what the runtime
+# must observe and alert on. Endpoint, tenant, and schedule values are
+# environment bindings in PostgreSQL, not source configuration.
+
+contract: people-directory-operational
+version: 0.1.0
+source_role: team-person-directory
+connector: integrations/people/connector
+
+synchronisation:
+  mode: poll-with-delta-query
+  freshness_budget: 24h            # per mvp-scope.md acceptance gates
+  measured_as: time since last successful completed extraction run
+
+observability:
+  required_signals:
+    - last successful run timestamp and duration
+    - extracted/tombstoned record counts per object type
+    - quarantine count by rule
+    - schema hash of the observed Graph payload fields
+    - authentication and throttling (HTTP 429) failures
+  alerts:
+    - freshness budget exceeded
+    - authentication failure
+    - quarantine count above approved threshold
+    - observed schema hash change (drift proposal, never silent adaptation)
+
+data_policy:
+  classification: internal-person-data
+  minimisation: only connector.yaml supported_fields may be requested
+  retention: raw extraction payloads follow the evidence-store retention policy
+  prohibited: payroll, performance, and other sensitive HR attributes
+
+failure_semantics:
+  unavailable_source: answers report coverage partial; ingestion retries with backoff
+  stale_source: answers report freshness stale once the budget is exceeded

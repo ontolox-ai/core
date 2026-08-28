@@ -1,0 +1,34 @@
+# Required checks for every candidate release, per
+# docs/artifact-management.md. Checks run against the exact candidate commit;
+# approvals bind to the CI-passing SHA.
+
+checks:
+  security:
+    - secret-private-key-and-sensitive-sample-scan
+    - image-vulnerability-scan
+    - sbom-and-build-provenance
+  code:
+    - formatting-and-lint
+    - unit-type-and-dependency-tests
+  ontology:
+    - linkml-supported-profile-validation
+    - stable-iri-and-mapping-checks
+    - deterministic-artefact-generation
+    - runtime-validator-shacl-equivalence
+    - conformance-fixtures            # fixtures/conformance
+  integration:
+    - connector-contract-tests        # stubs or approved sandbox
+    - migration-forward-and-rollback-tests
+    - identity-and-quarantine-tests
+    - golden-query-replay             # fixtures/golden
+    - action-idempotency-stale-version-timeout-reconciliation-tests
+  release:
+    - reproducible-digest-check       # clean rebuild must match content digests
+    - breaking-change-and-required-approver-calculation
+
+publication:
+  on_protected_tag:
+    - push digest-addressed connector/action images to the OCI registry
+    - push one generated release bundle (exports, schemas, provenance,
+      executable migrations, test report, manifest) to the OCI registry
+    - record the verified manifest in the PostgreSQL release registry

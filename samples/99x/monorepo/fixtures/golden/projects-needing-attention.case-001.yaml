@@ -1,0 +1,60 @@
+# Golden end-to-end case: one project needing attention for two reasons,
+# with a stale allocation source. All data is synthetic and de-identified.
+
+case: projects-needing-attention-001
+contract: projects-needing-attention@0.1.0
+as_of_month: 2026-08-01
+
+source_snapshots:
+  project_portfolio:
+    - project_code: PRJ-1001
+      name: Synthetic Delivery Programme
+      lifecycle_status: active
+      accountable_owner: "00000000-0000-4000-8000-000000000001"
+  directory:
+    persons:
+      - person_id: "00000000-0000-4000-8000-000000000001"
+        display_name: Synthetic Lead
+        active: true
+    teams:
+      - team_id: "00000000-0000-4000-8000-00000000t001"
+        name: Synthetic Platform Team
+        active: true
+        team_lead: "00000000-0000-4000-8000-000000000001"
+  risk_register:
+    - risk_id: RSK-501
+      project: PRJ-1001
+      status: open
+      rating: critical
+      owner_register_user: reg-user-77   # maps via crosswalk to person ...0001
+  compliance:
+    - finding_id: FND-301
+      project: PRJ-1001
+      control_reference: ISO27001-A.5.1
+      status: open
+      severity: high
+      due_date: 2026-07-15               # overdue at evaluation time
+  resource_planning:
+    status: stale                        # last successful run outside budget
+    allocations:
+      - allocation_id: ALC-901
+        project: PRJ-1001
+        team: "00000000-0000-4000-8000-00000000t001"
+        canonical_month: 2026-08-01
+        requested_fte: 3.0
+        committed_fte: 2.0               # gap 1.0 > threshold 0.5
+
+expected_answer:
+  projects:
+    - project_code: PRJ-1001
+      attention_reasons:
+        - material_risk: RSK-501 (open, critical)
+        - compliance_concern: FND-301 (open, overdue, high)
+        - allocation_gap: team ...t001, 2026-08, gap 1.0 FTE
+      accountable:
+        teams: ["00000000-0000-4000-8000-00000000t001"]
+        persons: ["00000000-0000-4000-8000-000000000001"]
+  coverage: complete          # every source role produced joinable records
+  freshness: stale            # resource-planning source exceeded its budget
+  lineage: every returned field carries source record/version, extraction run,
+    mapping version, and model release identifiers

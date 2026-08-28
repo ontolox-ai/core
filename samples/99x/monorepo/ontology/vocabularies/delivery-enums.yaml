@@ -1,0 +1,66 @@
+id: https://ontolox.ai/99x/vocab/delivery-enums
+name: delivery-enums
+description: >-
+  Controlled enumerations for the 99x delivery-assurance model. Profiling maps
+  concrete source values to these permissible values, `other`, or `unknown`;
+  a domain owner approves every value map before release.
+prefixes:
+  linkml: https://w3id.org/linkml/
+  x99: https://ontolox.ai/99x/
+default_prefix: x99
+
+enums:
+  LifecycleStatus:
+    description: Canonical project lifecycle status.
+    permissible_values:
+      active:
+      on_hold:
+      closed:
+      other:
+      unknown:
+
+  RiskStatus:
+    description: Canonical risk state in the risk register.
+    permissible_values:
+      open:
+      mitigating:
+      accepted:
+      closed:
+      other:
+      unknown:
+
+  RiskRating:
+    description: Canonical combined risk rating derived from likelihood and impact.
+    permissible_values:
+      low:
+      medium:
+      high:
+      critical:
+      unknown:
+
+  FindingStatus:
+    description: Canonical audit/compliance finding state.
+    permissible_values:
+      open:
+      in_remediation:
+      closed:
+      other:
+      unknown:
+
+  FindingSeverity:
+    description: Canonical compliance finding severity.
+    permissible_values:
+      low:
+      medium:
+      high:
+      critical:
+      unknown:
+
+  ResponsibilityType:
+    description: Responsibility a team holds on a project assignment.
+    permissible_values:
+      delivery:
+      quality_assurance:
+      support:
+      other:
+      unknown:

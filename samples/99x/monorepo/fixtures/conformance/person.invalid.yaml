@@ -1,0 +1,7 @@
+# Negative conformance example: must be rejected by the generated Person
+# schema in every release.
+
+Person:
+  # missing person_id (identifier) and active (required)
+  display_name: "Synthetic Person Without Identity"
+  email: "not-a-modelled-attribute@example.test"   # unmodelled field must be rejected

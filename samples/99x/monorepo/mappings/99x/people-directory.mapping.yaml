@@ -1,0 +1,58 @@
+# Reviewed mapping from the O365 directory source role to the canonical
+# Person and Team objects. Released and versioned with the model; a data
+# owner and the ontology owners approve changes.
+
+mapping: people-directory
+version: 0.1.0
+source_role: team-person-directory
+connector: integrations/people/connector
+targets:
+  - Person
+  - Team
+model_release: ">=0.1.0 <0.2.0"
+
+person:
+  source_object: user
+  key:
+    source_field: id
+    target: Person.person_id
+    note: Immutable Entra user object ID; email and display name are attributes, never keys.
+  fields:
+    - source: displayName
+      target: Person.display_name
+    - source: accountEnabled
+      target: Person.active
+  scope: Only accountEnabled users are canonical; disabled users are retained as inactive for ownership history.
+  tombstones: Delta-feed removals mark the person inactive; records are never deleted from lineage.
+
+team:
+  source_object: group
+  key:
+    source_field: id
+    target: Team.team_id
+  fields:
+    - source: displayName
+      target: Team.name
+  scope: >-
+    Only groups classified as delivery teams by the approved, versioned
+    group-classification list enter the ontology. Distribution lists and
+    ad-hoc M365 groups are excluded.
+  team_lead:
+    rule: >-
+      The designated lead is the single group owner. A group with zero or
+      multiple owners has no team lead until 99x designates one; the group is
+      reported, not guessed.
+  members:
+    source_relation: group members
+    target: Team.members
+    note: Member user IDs must resolve to canonical persons; unknown IDs are quarantined.
+
+quarantine:
+  - duplicate user or group object ID in one extraction run
+  - group member ID that does not resolve to a canonical person
+  - group classified as a delivery team but missing displayName
+  - person or team referenced by another source role without a directory match or approved crosswalk
+
+evidence:
+  - profile-run: bounded field-population and cardinality statistics
+  - classification: group-classification list approval record

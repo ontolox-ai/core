@@ -1,0 +1,48 @@
+# Action contract for the single governed MVP write: assigning the owner of
+# an open high/critical risk in the risk register.
+
+contract: assign-risk-owner
+version: 0.1.0
+kind: action
+model_release: ">=0.1.0 <0.2.0"
+target_source_role: risk-register
+adapter: integrations/risks/actions   # added when the risk integration lands
+
+input_schema:
+  risk_iri:
+    type: iri
+    required: true
+    description: Canonical risk IRI; must resolve in the identity registry.
+  new_owner_person_id:
+    type: string
+    required: true
+    description: Directory person ID; resolved to the register's active user ID through the risk-owner crosswalk.
+  expected_source_version:
+    type: string
+    required: true
+    description: Risk record version/etag observed when the change was proposed.
+  idempotency_key:
+    type: uuid
+    required: true
+
+preconditions:
+  - risk status is open and rating is high or critical
+  - new owner resolves to exactly one active directory person and one active register user
+  - active action contract, mapping, and model release match this contract's pins
+  - caller holds the risk-action role for the project
+
+approval:
+  required: true
+  approver_role: risk-action-owner
+  binds_to: SHA-256 digest of the exact payload, source record/version, action contract, and model release
+  invalidated_by: any change to payload, source version, contract, or model release
+
+execution:
+  write: owner field only, via the register's conditional-update API
+  idempotency: register-native idempotency where available; replay of a key never duplicates a successful write
+  stale_version: fail safely with a typed stale-version outcome; never overwrite unseen changes
+  uncertain_timeout: enter reconciliation; never blind-retry
+
+audit:
+  record: request, approval, execution, result, contract/model versions, reconciliation state
+  store: append-only PostgreSQL audit schema

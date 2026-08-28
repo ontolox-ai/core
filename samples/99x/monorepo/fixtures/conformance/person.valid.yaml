@@ -1,0 +1,7 @@
+# Positive conformance example: must validate against the generated
+# Person schema in every release.
+
+Person:
+  person_id: "00000000-0000-4000-8000-000000000001"
+  display_name: "Synthetic Person"
+  active: true

@@ -1,0 +1,59 @@
+# Versioned query contract for the MVP read scenario. Natural-language
+# exploration may only select and parameterise this contract; it may not
+# invent source queries.
+
+contract: projects-needing-attention
+version: 0.1.0
+kind: query
+model_release: ">=0.1.0 <0.2.0"
+read_model: materialised delivery-assurance slice in PostgreSQL
+
+question: >-
+  Which active 99x projects require attention because of material open risks,
+  overdue or non-compliant audit findings, or resource-allocation gaps—and
+  which teams and people are accountable?
+
+parameters:
+  as_of_month:
+    type: date
+    description: Canonical calendar month for allocation-gap evaluation.
+    default: current month in the agreed 99x reporting timezone
+  attention_reasons:
+    type: enum-set
+    values: [material_risk, compliance_concern, allocation_gap]
+    default: all
+
+predicates:
+  active_project: lifecycle_status == active
+  material_risk: risk.status == open AND risk.rating IN (high, critical)
+  compliance_concern: >-
+    finding.status != closed AND (finding.due_date < today OR
+    finding.severity >= approved threshold)
+  allocation_gap: >-
+    max(0, sum(requested_fte) - sum(committed_fte)) > approved threshold,
+    evaluated per (project, team, canonical month); a project needs attention
+    when any team has a material gap
+  accountable_party: >-
+    active effective-dated project-team assignment, or explicit source owner
+    resolved to an active directory person
+
+thresholds:
+  finding_severity: high          # domain-owner approved
+  allocation_gap_fte: 0.5         # domain-owner approved
+
+response:
+  per_project:
+    - project_code, name, lifecycle_status
+    - attention_reasons with the triggering risk/finding/allocation values
+    - accountable teams and persons (minimised person fields only)
+  answer_metadata:
+    - per-source last-successful-extraction timestamps
+    - coverage: complete | partial
+    - freshness: current | stale
+    - excluded records: unresolved identities, missing joins, unavailable sources
+  lineage: every returned business field cites source record/version,
+    extraction run, mapping version, and model release
+
+permissions:
+  read_roles: [delivery-portfolio-owner, project-lead, audit-compliance-owner, resource-manager]
+  field_policy: person data limited to person_id and display_name
