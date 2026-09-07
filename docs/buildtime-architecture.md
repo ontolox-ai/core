@@ -145,7 +145,7 @@ Every transition records actor, timestamp, reason, previous state, and content d
 | Descriptions or classifications in the active model | Domain-owner approval |
 | Entities, relationships, definitions, mappings, identity or operational contracts | Domain owner + relevant technical owner |
 | Connector production access or secret-reference change | Explicit technical owner |
-| Customer/people/financial semantics and access classifications | Named data owner |
+| Customer/hr/financial semantics and access classifications | Named data owner |
 | Action contract or write-capable connector | Named action owner + technical owner; full audit |
 
 There is no model auto-apply path in the MVP. Policy-bounded automatic release may be reconsidered only after proposal quality and rollback are measured in production.

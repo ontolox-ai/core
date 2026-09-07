@@ -8,7 +8,7 @@
 /contracts/queries/     @99x/delivery-domain-owners
 /contracts/actions/     @99x/risk-action-owners @99x/platform-engineering
 /contracts/operational/ @99x/data-owners
-/integrations/people/   @99x/directory-source-owners @99x/platform-engineering
+/integrations/hr/   @99x/directory-source-owners @99x/platform-engineering
 /migrations/            @99x/platform-engineering @99x/database-owners
 /fixtures/              @99x/delivery-domain-owners
 /.ci/                   @99x/platform-engineering

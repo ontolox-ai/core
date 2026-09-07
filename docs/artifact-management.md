@@ -57,7 +57,7 @@ integrations/
   projects/
     connector/
     tests/
-  people/
+  hr/
     connector/
     tests/
   compliance/

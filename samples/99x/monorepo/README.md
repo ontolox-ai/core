@@ -17,7 +17,7 @@ ontology/
   vocabularies/
     delivery-enums.yaml          # controlled enumerations
 integrations/
-  people/                        # O365 directory source role
+  hr/                        # O365 directory source role
     connector/
       connector.yaml             # reviewed template: fields, capabilities, defaults
       extract.py                 # minimised Microsoft Graph extraction
@@ -47,6 +47,6 @@ Paths from the target layout that have no artefact yet (`integrations/projects`,
 
 ## What is deliberately not here
 
-- **Secret values and environment bindings.** Tenant IDs, endpoints, schedules, and credentials live in PostgreSQL and the secret manager; source files carry opaque references such as `secret://99x/people/reader`.
+- **Secret values and environment bindings.** Tenant IDs, endpoints, schedules, and credentials live in PostgreSQL and the secret manager; source files carry opaque references such as `secret://99x/hr/reader`.
 - **Generated artefacts.** RDF/OWL, SHACL, JSON-LD, JSON Schema, and provenance exports are CI outputs published to the OCI release bundle, never committed here.
 - **Real records.** Fixtures are synthetic; no identifiable 99x person, project, or risk data may enter this repository.

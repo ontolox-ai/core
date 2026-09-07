@@ -5,7 +5,7 @@
 mapping: people-directory
 version: 0.1.0
 source_role: team-person-directory
-connector: integrations/people/connector
+connector: integrations/hr/connector
 targets:
   - Person
   - Team

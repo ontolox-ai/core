@@ -39,4 +39,4 @@ defaults:
     max_attempts: 4
     backoff: exponential
 
-secret_reference: secret://99x/people/reader   # opaque; resolved at runtime
+secret_reference: secret://99x/hr/reader   # opaque; resolved at runtime
